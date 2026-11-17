@@ -19,12 +19,19 @@ def create_app(config_name=None):
     login_manager.init_app(app)
     csrf.init_app(app)
 
+    # Where to send people who need to log in first
+    login_manager.login_view = "auth.login"
+    login_manager.login_message = "Please log in to see that page."
+    login_manager.login_message_category = "error"
+
     # Import models so SQLAlchemy knows which tables exist
     from . import models  # noqa: F401
 
     # Register blueprints (groups of routes)
+    from .blueprints.auth import bp as auth_bp
     from .blueprints.dashboard import bp as dashboard_bp
 
+    app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
 
     # Custom command: flask --app wsgi init-db

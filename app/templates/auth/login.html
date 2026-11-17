@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "_macros.html" import render_field %}
+
+{% block title %}Log in - Helpticketer{% endblock %}
+
+{% block content %}
+<section class="card card-narrow">
+  <h1>Log in</h1>
+  <form method="post" novalidate data-testid="login-form">
+    {{ form.hidden_tag() }}
+    {{ render_field(form.email, "login-email") }}
+    {{ render_field(form.password, "login-password") }}
+    {{ form.submit(class_="btn btn-primary", data_testid="login-submit") }}
+  </form>
+  <p class="muted">No account yet? <a href="{{ url_for('auth.register') }}">Register</a></p>
+</section>
+{% endblock %}
