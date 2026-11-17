@@ -19,9 +19,19 @@ def create_app(config_name=None):
     login_manager.init_app(app)
     csrf.init_app(app)
 
+    # Import models so SQLAlchemy knows which tables exist
+    from . import models  # noqa: F401
+
     # Register blueprints (groups of routes)
     from .blueprints.dashboard import bp as dashboard_bp
 
     app.register_blueprint(dashboard_bp)
+
+    # Custom command: flask --app wsgi init-db
+    @app.cli.command("init-db")
+    def init_db():
+        """Create all database tables."""
+        db.create_all()
+        print("Database tables created.")
 
     return app
