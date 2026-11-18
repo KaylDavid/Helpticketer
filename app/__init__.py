@@ -31,9 +31,11 @@ def create_app(config_name=None):
     # Register blueprints (groups of routes)
     from .blueprints.auth import bp as auth_bp
     from .blueprints.dashboard import bp as dashboard_bp
+    from .blueprints.tickets import bp as tickets_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(tickets_bp)
 
     # Friendly error pages
     @app.errorhandler(403)

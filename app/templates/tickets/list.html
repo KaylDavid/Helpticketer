@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Tickets - Helpticketer{% endblock %}
+
+{% block content %}
+<section class="card">
+  <div class="page-header">
+    <h1 data-testid="tickets-heading">{% if current_user.is_staff %}All tickets{% else %}My tickets{% endif %}</h1>
+    <a class="btn btn-primary" href="{{ url_for('tickets.new') }}" data-testid="new-ticket-link">New ticket</a>
+  </div>
+
+  {% if tickets %}
+  <div class="table-wrap">
+    <table class="table" data-testid="tickets-table">
+      <thead>
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">Title</th>
+          {% if current_user.is_staff %}<th scope="col">Requester</th>{% endif %}
+          <th scope="col">Category</th>
+          <th scope="col">Priority</th>
+          <th scope="col">Status</th>
+          <th scope="col">Created (UTC)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ticket in tickets %}
+        <tr data-testid="ticket-row">
+          <td>#{{ ticket.id }}</td>
+          <td>{{ ticket.title }}</td>
+          {% if current_user.is_staff %}<td>{{ ticket.requester.name }}</td>{% endif %}
+          <td>{{ ticket.category }}</td>
+          <td><span class="badge badge-priority-{{ ticket.priority|lower }}">{{ ticket.priority }}</span></td>
+          <td><span class="badge badge-status-{{ ticket.status|lower|replace(' ', '-') }}">{{ ticket.status }}</span></td>
+          <td>{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted" data-testid="no-tickets">No tickets yet. Click "New ticket" to submit one.</p>
+  {% endif %}
+</section>
+{% endblock %}

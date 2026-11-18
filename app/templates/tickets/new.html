@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "_macros.html" import render_field %}
+
+{% block title %}New ticket - Helpticketer{% endblock %}
+
+{% block content %}
+<section class="card card-medium">
+  <h1>Submit a ticket</h1>
+  <form method="post" novalidate data-testid="ticket-form">
+    {{ form.hidden_tag() }}
+    {{ render_field(form.title, "ticket-title") }}
+    {{ render_field(form.description, "ticket-description") }}
+    {{ render_field(form.category, "ticket-category") }}
+    {{ render_field(form.priority, "ticket-priority") }}
+    {{ form.submit(class_="btn btn-primary", data_testid="ticket-submit") }}
+    <a class="btn" href="{{ url_for('tickets.index') }}">Cancel</a>
+  </form>
+</section>
+{% endblock %}

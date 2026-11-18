@@ -6,6 +6,12 @@
 <section class="card">
   <h1>Welcome, {{ current_user.name }}!</h1>
   <p>You are logged in as <strong>{{ current_user.role }}</strong>.</p>
-  <p class="muted">The ticket dashboard is coming in a later step.</p>
+  <p>
+    <a class="btn btn-primary" href="{{ url_for('tickets.new') }}">Submit a ticket</a>
+    <a class="btn" href="{{ url_for('tickets.index') }}">
+      {% if current_user.is_staff %}View all tickets{% else %}View my tickets{% endif %}
+    </a>
+  </p>
+  <p class="muted">The full dashboard with charts is coming in a later step.</p>
 </section>
 {% endblock %}

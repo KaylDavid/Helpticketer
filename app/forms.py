@@ -1,9 +1,14 @@
 from flask_wtf import FlaskForm
-from wtforms import PasswordField, StringField, SubmitField
+from wtforms import PasswordField, SelectField, StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError
 
 from .extensions import db
-from .models import User
+from .models import CATEGORIES, PRIORITIES, User
+
+
+def strip_text(value):
+    """Remove spaces at the start and end of text typed into a field."""
+    return value.strip() if isinstance(value, str) else value
 
 
 class RegistrationForm(FlaskForm):
@@ -56,3 +61,34 @@ class LoginForm(FlaskForm):
         validators=[DataRequired(message="Please enter your password.")],
     )
     submit = SubmitField("Log in")
+
+
+class TicketForm(FlaskForm):
+    title = StringField(
+        "Title",
+        filters=[strip_text],
+        validators=[
+            DataRequired(message="Please enter a title."),
+            Length(min=3, max=120, message="Title must be 3 to 120 characters."),
+        ],
+    )
+    description = TextAreaField(
+        "Description",
+        filters=[strip_text],
+        validators=[
+            DataRequired(message="Please describe the problem."),
+            Length(min=10, max=5000, message="Description must be 10 to 5000 characters."),
+        ],
+    )
+    category = SelectField(
+        "Category",
+        choices=[(c, c) for c in CATEGORIES],
+        validators=[DataRequired(message="Please choose a category.")],
+    )
+    priority = SelectField(
+        "Priority",
+        choices=[(p, p) for p in PRIORITIES],
+        default="Medium",
+        validators=[DataRequired(message="Please choose a priority.")],
+    )
+    submit = SubmitField("Submit ticket")
