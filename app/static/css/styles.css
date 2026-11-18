@@ -313,3 +313,85 @@ textarea.input {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1.5rem;
 }
+
+/* ---- Dashboard ---- */
+[hidden] {
+  display: none !important;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0.9rem 1rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.stat-number {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.chart-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+.chart-box {
+  position: relative;
+  height: 260px;
+}
+
+.filter-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  align-items: end;
+  margin-bottom: 1rem;
+}
+
+.filter-bar label {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.table td.title-cell {
+  min-width: 200px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

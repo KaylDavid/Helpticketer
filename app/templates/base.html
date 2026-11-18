@@ -11,6 +11,9 @@
     <a class="brand" href="{{ url_for('dashboard.home') }}">Helpticketer</a>
     <nav class="nav">
       {% if current_user.is_authenticated %}
+        <a href="{{ url_for('dashboard.home') }}" data-testid="nav-dashboard">Dashboard</a>
+        <a href="{{ url_for('tickets.index') }}" data-testid="nav-tickets">Tickets</a>
+        <a href="{{ url_for('tickets.new') }}" data-testid="nav-new-ticket">New ticket</a>
         <span class="nav-user" data-testid="nav-user">{{ current_user.name }} ({{ current_user.role }})</span>
         <form method="post" action="{{ url_for('auth.logout') }}" class="inline-form">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -36,5 +39,7 @@
 
     {% block content %}{% endblock %}
   </main>
+
+  {% block scripts %}{% endblock %}
 </body>
 </html>

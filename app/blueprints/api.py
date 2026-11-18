@@ -323,3 +323,13 @@ def update_assignee(ticket_id):
         return error_response(str(error), 409)
 
     return jsonify(ticket=ticket_to_dict(ticket, include_comments=True))
+
+# ---------- dashboard statistics ----------
+from ..services.stats import ticket_stats  # noqa: E402
+
+
+@bp.route("/stats")
+@api_auth_required
+def stats():
+    """Ticket counts for the dashboard (only counts tickets this caller may see)."""
+    return jsonify(stats=ticket_stats(g.api_user))

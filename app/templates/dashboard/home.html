@@ -3,15 +3,108 @@
 {% block title %}Dashboard - Helpticketer{% endblock %}
 
 {% block content %}
-<section class="card">
-  <h1>Welcome, {{ current_user.name }}!</h1>
-  <p>You are logged in as <strong>{{ current_user.role }}</strong>.</p>
-  <p>
-    <a class="btn btn-primary" href="{{ url_for('tickets.new') }}">Submit a ticket</a>
-    <a class="btn" href="{{ url_for('tickets.index') }}">
-      {% if current_user.is_staff %}View all tickets{% else %}View my tickets{% endif %}
-    </a>
-  </p>
-  <p class="muted">The full dashboard with charts is coming in a later step.</p>
-</section>
+<div id="dashboard" data-is-staff="{{ 'true' if current_user.is_staff else 'false' }}">
+
+  <div class="page-header">
+    <h1 data-testid="dashboard-heading">{% if current_user.is_staff %}Support dashboard{% else %}My dashboard{% endif %}</h1>
+    <a class="btn btn-primary" href="{{ url_for('tickets.new') }}" data-testid="dashboard-new-ticket">New ticket</a>
+  </div>
+
+  <div class="flash flash-error" id="load-error" role="alert" data-testid="load-error" hidden></div>
+
+  <section aria-label="Ticket summary">
+    <div class="stat-grid">
+      <div class="stat-card"><span class="stat-number" data-stat="total" data-testid="stat-total">–</span><span class="stat-label">Total</span></div>
+      <div class="stat-card"><span class="stat-number" data-stat="open" data-testid="stat-open">–</span><span class="stat-label">Open</span></div>
+      <div class="stat-card"><span class="stat-number" data-stat="in-progress" data-testid="stat-in-progress">–</span><span class="stat-label">In Progress</span></div>
+      <div class="stat-card"><span class="stat-number" data-stat="resolved" data-testid="stat-resolved">–</span><span class="stat-label">Resolved</span></div>
+      <div class="stat-card"><span class="stat-number" data-stat="closed" data-testid="stat-closed">–</span><span class="stat-label">Closed</span></div>
+      {% if current_user.is_staff %}
+      <div class="stat-card"><span class="stat-number" data-stat="unassigned" data-testid="stat-unassigned">–</span><span class="stat-label">Unassigned (active)</span></div>
+      {% endif %}
+    </div>
+  </section>
+
+  <section aria-label="Charts">
+    <div class="charts-grid">
+      <div class="card">
+        <h2 class="chart-title">Tickets by status</h2>
+        <div class="chart-box"><canvas id="status-chart" role="img" aria-label="Bar chart of tickets by status" data-testid="status-chart"></canvas></div>
+      </div>
+      <div class="card">
+        <h2 class="chart-title">Tickets by priority</h2>
+        <div class="chart-box"><canvas id="priority-chart" role="img" aria-label="Doughnut chart of tickets by priority" data-testid="priority-chart"></canvas></div>
+      </div>
+    </div>
+    <p class="muted" id="charts-note" data-testid="charts-note" hidden></p>
+  </section>
+
+  <section class="card" aria-label="Ticket list">
+    <h2 class="chart-title">Tickets</h2>
+
+    <form id="filter-form" class="filter-bar" role="search" novalidate data-testid="filter-form">
+      <div>
+        <label for="filter-search">Search</label>
+        <input id="filter-search" class="input" type="search" placeholder="Title or description" maxlength="100" data-testid="filter-search">
+      </div>
+      <div>
+        <label for="filter-status">Status</label>
+        <select id="filter-status" class="input" data-testid="filter-status">
+          <option value="">All</option>
+          {% for s in statuses %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="filter-priority">Priority</label>
+        <select id="filter-priority" class="input" data-testid="filter-priority">
+          <option value="">All</option>
+          {% for p in priorities %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="filter-category">Category</label>
+        <select id="filter-category" class="input" data-testid="filter-category">
+          <option value="">All</option>
+          {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <button type="button" class="btn" id="filter-reset" data-testid="filter-reset">Reset filters</button>
+      </div>
+    </form>
+
+    <p class="muted" id="results-summary" aria-live="polite" data-testid="results-summary">Loading tickets...</p>
+
+    <div class="table-wrap">
+      <table class="table" data-testid="dashboard-table">
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Title</th>
+            {% if current_user.is_staff %}<th scope="col">Requester</th>{% endif %}
+            <th scope="col">Assigned to</th>
+            <th scope="col">Category</th>
+            <th scope="col">Priority</th>
+            <th scope="col">Status</th>
+            <th scope="col">Created (UTC)</th>
+          </tr>
+        </thead>
+        <tbody id="tickets-body"></tbody>
+      </table>
+    </div>
+
+    <p class="muted" id="empty-state" data-testid="empty-state" hidden>No tickets match your filters.</p>
+
+    <div class="pager">
+      <button type="button" class="btn btn-small" id="pager-prev" data-testid="pager-prev" disabled>&larr; Previous</button>
+      <span id="page-info" data-testid="page-info">Page 1 of 1</span>
+      <button type="button" class="btn btn-small" id="pager-next" data-testid="pager-next" disabled>Next &rarr;</button>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}
