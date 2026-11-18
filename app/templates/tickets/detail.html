@@ -32,6 +32,31 @@
   {% endif %}
 </section>
 
+{# Agent tools: only staff get these forms (the routes also check the role) #}
+{% if assign_form is not none and status_form is not none %}
+<section class="card section-gap" data-testid="staff-panel">
+  <h2>Agent tools</h2>
+  {% if can_edit %}
+  <div class="tools-grid">
+    <form method="post" action="{{ url_for('tickets.assign', ticket_id=ticket.id) }}" novalidate data-testid="assign-form">
+      {{ assign_form.hidden_tag() }}
+      {{ render_field(assign_form.assignee, "assign-select") }}
+      {{ assign_form.submit(class_="btn btn-primary", data_testid="assign-submit") }}
+    </form>
+
+    <form method="post" action="{{ url_for('tickets.update_status', ticket_id=ticket.id) }}" novalidate data-testid="status-form">
+      {{ status_form.hidden_tag() }}
+      {{ render_field(status_form.status, "status-select") }}
+      {{ render_field(status_form.resolution_note, "resolution-note") }}
+      {{ status_form.submit(class_="btn btn-primary", data_testid="status-submit") }}
+    </form>
+  </div>
+  {% else %}
+  <p class="muted" data-testid="staff-closed-message">This ticket is closed, so it can no longer be changed.</p>
+  {% endif %}
+</section>
+{% endif %}
+
 <section class="card section-gap">
   <h2>Comments ({{ ticket.comments|length }})</h2>
 

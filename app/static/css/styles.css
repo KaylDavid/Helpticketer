@@ -307,3 +307,9 @@ textarea.input {
   color: #4c1d95;
   border-color: #c4b5fd;
 }
+/* ---- Agent tools ---- */
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}

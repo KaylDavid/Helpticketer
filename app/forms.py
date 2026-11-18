@@ -1,6 +1,13 @@
 from flask_wtf import FlaskForm
 from wtforms import PasswordField, SelectField, StringField, SubmitField, TextAreaField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError
+from wtforms.validators import (
+    DataRequired,
+    Email,
+    EqualTo,
+    Length,
+    Optional,
+    ValidationError,
+)
 
 from .extensions import db
 from .models import CATEGORIES, PRIORITIES, User
@@ -104,3 +111,28 @@ class CommentForm(FlaskForm):
         ],
     )
     submit = SubmitField("Post comment")
+
+
+class AssignForm(FlaskForm):
+    # The choices are filled in by the route (a list of agents and admins).
+    # 0 means "Unassigned".
+    assignee = SelectField("Assign to", coerce=int, choices=[])
+    submit = SubmitField("Save assignment")
+
+
+class StatusForm(FlaskForm):
+    # The choices are filled in by the route (only the legal next statuses).
+    status = SelectField(
+        "Change status to",
+        choices=[],
+        validators=[DataRequired(message="Please choose a status.")],
+    )
+    resolution_note = TextAreaField(
+        "Resolution note (required to resolve)",
+        filters=[strip_text],
+        validators=[
+            Optional(),
+            Length(max=2000, message="Resolution note must be 2000 characters or fewer."),
+        ],
+    )
+    submit = SubmitField("Update status")
