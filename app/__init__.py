@@ -1,7 +1,7 @@
 import os
 
 import click
-from flask import Flask, render_template
+from flask import Flask, jsonify, render_template, request
 
 from .config import config_by_name
 from .extensions import csrf, db, login_manager
@@ -29,6 +29,7 @@ def create_app(config_name=None):
     from . import models  # noqa: F401
 
     # Register blueprints (groups of routes)
+    from .blueprints.api import bp as api_bp
     from .blueprints.auth import bp as auth_bp
     from .blueprints.dashboard import bp as dashboard_bp
     from .blueprints.tickets import bp as tickets_bp
@@ -36,15 +37,34 @@ def create_app(config_name=None):
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(tickets_bp)
+    app.register_blueprint(api_bp)
 
-    # Friendly error pages
+    # The API has no CSRF tokens. This is safe because write requests must use
+    # Basic Auth, which browsers never send automatically (see api.py).
+    csrf.exempt(api_bp)
+
+    # Friendly error pages (JSON for /api/ URLs, HTML pages for everything else)
     @app.errorhandler(403)
     def forbidden(error):
         return render_template("errors/403.html"), 403
 
     @app.errorhandler(404)
     def not_found(error):
+        if request.path.startswith("/api/"):
+            return jsonify(error="Not found.", fields={}), 404
         return render_template("errors/404.html"), 404
+
+    @app.errorhandler(405)
+    def method_not_allowed(error):
+        if request.path.startswith("/api/"):
+            return jsonify(error="Method not allowed.", fields={}), 405
+        return error
+
+    @app.errorhandler(500)
+    def server_error(error):
+        if request.path.startswith("/api/"):
+            return jsonify(error="Something went wrong on the server.", fields={}), 500
+        return error
 
     # Custom command: flask --app wsgi init-db
     @app.cli.command("init-db")
