@@ -27,7 +27,7 @@
         {% for ticket in tickets %}
         <tr data-testid="ticket-row">
           <td>#{{ ticket.id }}</td>
-          <td>{{ ticket.title }}</td>
+          <td><a href="{{ url_for('tickets.detail', ticket_id=ticket.id) }}" data-testid="ticket-link">{{ ticket.title }}</a></td>
           {% if current_user.is_staff %}<td>{{ ticket.requester.name }}</td>{% endif %}
           <td>{{ ticket.category }}</td>
           <td><span class="badge badge-priority-{{ ticket.priority|lower }}">{{ ticket.priority }}</span></td>

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% from "_macros.html" import render_field %}
+
+{% block title %}Ticket #{{ ticket.id }} - Helpticketer{% endblock %}
+
+{% block content %}
+<p><a href="{{ url_for('tickets.index') }}" data-testid="back-to-list">&larr; Back to tickets</a></p>
+
+<section class="card">
+  <div class="page-header">
+    <h1 data-testid="ticket-title">#{{ ticket.id }} {{ ticket.title }}</h1>
+    <div>
+      <span class="badge badge-priority-{{ ticket.priority|lower }}" data-testid="ticket-priority-badge">{{ ticket.priority }}</span>
+      <span class="badge badge-status-{{ ticket.status|lower|replace(' ', '-') }}" data-testid="ticket-status-badge">{{ ticket.status }}</span>
+    </div>
+  </div>
+
+  <dl class="meta-grid">
+    <div><dt>Requester</dt><dd data-testid="ticket-requester">{{ ticket.requester.name }}</dd></div>
+    <div><dt>Assigned to</dt><dd data-testid="ticket-assignee">{{ ticket.assignee.name if ticket.assignee else "Unassigned" }}</dd></div>
+    <div><dt>Category</dt><dd>{{ ticket.category }}</dd></div>
+    <div><dt>Created (UTC)</dt><dd>{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+    <div><dt>Last updated (UTC)</dt><dd>{{ ticket.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+  </dl>
+
+  <h2>Description</h2>
+  <p class="pre-wrap" data-testid="ticket-description">{{ ticket.description }}</p>
+
+  {% if ticket.resolution_note %}
+  <h2>Resolution note</h2>
+  <p class="pre-wrap" data-testid="ticket-resolution">{{ ticket.resolution_note }}</p>
+  {% endif %}
+</section>
+
+<section class="card section-gap">
+  <h2>Comments ({{ ticket.comments|length }})</h2>
+
+  {% if ticket.comments %}
+  <ul class="comment-list" data-testid="comment-list">
+    {% for comment in ticket.comments %}
+    <li class="comment" data-testid="comment">
+      <div class="comment-meta">
+        <strong>{{ comment.author.name }}</strong>
+        {% if comment.author.is_staff %}<span class="badge badge-staff">{{ comment.author.role }}</span>{% endif %}
+        <span class="muted">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }} UTC</span>
+      </div>
+      <p class="pre-wrap">{{ comment.body }}</p>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted" data-testid="no-comments">No comments yet.</p>
+  {% endif %}
+
+  {% if can_comment %}
+  <form method="post" action="{{ url_for('tickets.post_comment', ticket_id=ticket.id) }}" novalidate data-testid="comment-form">
+    {{ form.hidden_tag() }}
+    {{ render_field(form.body, "comment-body") }}
+    {{ form.submit(class_="btn btn-primary", data_testid="comment-submit") }}
+  </form>
+  {% else %}
+  <p class="muted" data-testid="comments-closed">This ticket is closed, so new comments are not allowed.</p>
+  {% endif %}
+</section>
+{% endblock %}

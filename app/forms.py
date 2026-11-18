@@ -92,3 +92,15 @@ class TicketForm(FlaskForm):
         validators=[DataRequired(message="Please choose a priority.")],
     )
     submit = SubmitField("Submit ticket")
+
+
+class CommentForm(FlaskForm):
+    body = TextAreaField(
+        "Add a comment",
+        filters=[strip_text],
+        validators=[
+            DataRequired(message="Please write a comment."),
+            Length(max=2000, message="Comment must be 2000 characters or fewer."),
+        ],
+    )
+    submit = SubmitField("Post comment")

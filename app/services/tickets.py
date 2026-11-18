@@ -1,5 +1,5 @@
 from ..extensions import db
-from ..models import Ticket
+from ..models import Comment, Ticket
 
 
 def create_ticket(requester, title, description, category, priority):
@@ -28,3 +28,18 @@ def visible_tickets_query(user):
     if not user.is_staff:
         query = query.where(Ticket.requester_id == user.id)
     return query
+
+
+def can_comment(ticket):
+    """Business rule: a Closed ticket does not accept new comments."""
+    return ticket.status != "Closed"
+
+
+def add_comment(ticket, author, body):
+    """Add a comment to a ticket. Raises ValueError if the ticket is closed."""
+    if not can_comment(ticket):
+        raise ValueError("This ticket is closed, so new comments are not allowed.")
+    comment = Comment(ticket=ticket, author=author, body=body.strip())
+    db.session.add(comment)
+    db.session.commit()
+    return comment
