@@ -100,4 +100,32 @@ def create_app(config_name=None):
         db.session.commit()
         print(f"Created {role}: {email}")
 
+    # Custom command: flask --app wsgi seed-demo
+    @app.cli.command("seed-demo")
+    def seed_demo():
+        """Load demo data, but only if the database has no users yet."""
+        from .services.seed import seed_if_empty
+
+        if seed_if_empty():
+            print("Demo data loaded.")
+        else:
+            print("Database already has users, so nothing was added.")
+
+    # Custom command: flask --app wsgi reset-demo
+    @app.cli.command("reset-demo")
+    @click.option("--yes", is_flag=True, help="Skip the confirmation question.")
+    def reset_demo_command(yes):
+        """DELETE all data and reload the fake demo data."""
+        from .services.seed import DEMO_PASSWORD, reset_demo
+
+        if not yes and not click.confirm(
+            "This DELETES all tickets and users and loads demo data. Continue?"
+        ):
+            print("Cancelled. Nothing was changed.")
+            return
+
+        users, tickets, comments = reset_demo()
+        print(f"Demo data loaded: {users} users, {tickets} tickets, {comments} comments.")
+        print(f"Demo accounts: user@demo.com, agent@demo.com, admin@demo.com (password: {DEMO_PASSWORD})")
+
     return app
