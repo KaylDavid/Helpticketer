@@ -3,12 +3,17 @@
 import base64
 
 import pytest
+from werkzeug.security import generate_password_hash
 
 from app import create_app
 from app.extensions import db
 from app.models import Ticket, User
 
 PASSWORD = "password123"  # every test account uses this fake password
+
+# Tests use a deliberately cheap hash so the suite runs fast.
+# The real app keeps its strong default (see User.set_password in models.py).
+FAST_HASH = generate_password_hash(PASSWORD, method="pbkdf2:sha256:1000")
 
 
 @pytest.fixture
@@ -30,7 +35,7 @@ def client(app):
 
 def _make_user(name, email, role):
     user = User(name=name, email=email, role=role)
-    user.set_password(PASSWORD)
+    user.password_hash = FAST_HASH  # cheap hash, only inside tests
     db.session.add(user)
     db.session.commit()
     return user
