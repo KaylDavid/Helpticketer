@@ -8,6 +8,7 @@ from sqlalchemy import or_
 from ..extensions import db
 from ..models import CATEGORIES, PRIORITIES, STATUSES, Ticket, User
 from ..permissions import can_view_ticket
+from ..services.stats import ACTIVE_STATUSES, ticket_stats
 from ..services.tickets import (
     add_comment,
     assign_ticket,
@@ -172,6 +173,8 @@ def list_tickets():
     status = request.args.get("status")
     priority = request.args.get("priority")
     category = request.args.get("category")
+    assigned = request.args.get("assigned")
+    unassigned = request.args.get("unassigned")
 
     if status and status not in STATUSES:
         errors["status"] = f"status must be one of: {', '.join(STATUSES)}."
@@ -179,6 +182,15 @@ def list_tickets():
         errors["priority"] = f"priority must be one of: {', '.join(PRIORITIES)}."
     if category and category not in CATEGORIES:
         errors["category"] = f"category must be one of: {', '.join(CATEGORIES)}."
+
+    # assigned=me     -> tickets assigned to the caller
+    # unassigned=true -> active tickets (Open / In Progress) that nobody has picked up
+    if assigned is not None and assigned != "me":
+        errors["assigned"] = "assigned must be: me."
+    if unassigned is not None and unassigned != "true":
+        errors["unassigned"] = "unassigned must be: true."
+    if assigned == "me" and unassigned == "true":
+        errors["unassigned"] = "Use either assigned=me or unassigned=true, not both."
 
     page = int_arg("page", 1, 1, 1_000_000, errors)
     per_page = int_arg("per_page", 10, 1, 50, errors)
@@ -193,6 +205,10 @@ def list_tickets():
         query = query.where(Ticket.priority == priority)
     if category:
         query = query.where(Ticket.category == category)
+    if assigned == "me":
+        query = query.where(Ticket.assignee_id == g.api_user.id)
+    if unassigned == "true":
+        query = query.where(Ticket.assignee_id.is_(None), Ticket.status.in_(ACTIVE_STATUSES))
 
     search = request.args.get("q", "").strip()
     if search:
@@ -324,10 +340,8 @@ def update_assignee(ticket_id):
 
     return jsonify(ticket=ticket_to_dict(ticket, include_comments=True))
 
+
 # ---------- dashboard statistics ----------
-from ..services.stats import ticket_stats  # noqa: E402
-
-
 @bp.route("/stats")
 @api_auth_required
 def stats():

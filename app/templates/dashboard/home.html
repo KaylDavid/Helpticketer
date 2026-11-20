@@ -6,7 +6,10 @@
 <div id="dashboard" data-is-staff="{{ 'true' if current_user.is_staff else 'false' }}">
 
   <div class="page-header">
-    <h1 data-testid="dashboard-heading">{% if current_user.is_staff %}Support dashboard{% else %}My dashboard{% endif %}</h1>
+    <div>
+      <h1 data-testid="dashboard-heading">{% if current_user.is_staff %}Support dashboard{% else %}My dashboard{% endif %}</h1>
+      <p class="muted page-sub">Hello, {{ current_user.name }}. Here is where things stand.</p>
+    </div>
     <a class="btn btn-primary" href="{{ url_for('tickets.new') }}" data-testid="dashboard-new-ticket">New ticket</a>
   </div>
 
@@ -41,6 +44,17 @@
 
   <section class="card" aria-label="Ticket list">
     <h2 class="chart-title">Tickets</h2>
+
+    {% if current_user.is_staff %}
+      {% set chips = [("all", "All"), ("mine", "Assigned to me"), ("unassigned", "Unassigned"), ("urgent", "Urgent")] %}
+    {% else %}
+      {% set chips = [("all", "All"), ("open", "Open"), ("in-progress", "In Progress"), ("resolved", "Resolved")] %}
+    {% endif %}
+    <div class="chip-row" role="group" aria-label="Quick filters" data-testid="chip-row">
+      {% for key, label in chips %}
+      <button type="button" class="chip" data-chip="{{ key }}" data-testid="chip-{{ key }}" aria-pressed="{{ 'true' if key == 'all' else 'false' }}">{{ label }} <span class="chip-count" data-chip-count="{{ key }}">–</span></button>
+      {% endfor %}
+    </div>
 
     <form id="filter-form" class="filter-bar" role="search" novalidate data-testid="filter-form">
       <div>

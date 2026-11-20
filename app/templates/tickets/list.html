@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_pills.html" import status_pill %}
 
 {% block title %}Tickets - Helpticketer{% endblock %}
 
@@ -25,13 +26,13 @@
       </thead>
       <tbody>
         {% for ticket in tickets %}
-        <tr data-testid="ticket-row">
+        <tr class="prio-{{ ticket.priority|lower }}" data-testid="ticket-row">
           <td>#{{ ticket.id }}</td>
-          <td><a href="{{ url_for('tickets.detail', ticket_id=ticket.id) }}" data-testid="ticket-link">{{ ticket.title }}</a></td>
+          <td class="title-cell"><a href="{{ url_for('tickets.detail', ticket_id=ticket.id) }}" data-testid="ticket-link">{{ ticket.title }}</a></td>
           {% if current_user.is_staff %}<td>{{ ticket.requester.name }}</td>{% endif %}
           <td>{{ ticket.category }}</td>
           <td><span class="badge badge-priority-{{ ticket.priority|lower }}">{{ ticket.priority }}</span></td>
-          <td><span class="badge badge-status-{{ ticket.status|lower|replace(' ', '-') }}">{{ ticket.status }}</span></td>
+          <td>{{ status_pill(ticket.status) }}</td>
           <td>{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
         </tr>
         {% endfor %}

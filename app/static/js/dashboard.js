@@ -9,7 +9,8 @@
   const isStaff = root.dataset.isStaff === "true";
   const PAGE_SIZE = 10;
 
-  const state = { page: 1 };
+  // scope is the "assigned" filter: "" (none), "me", or "unassigned"
+  const state = { page: 1, scope: "" };
   let requestId = 0; // used to ignore out-of-date responses
   let searchTimer = null;
 
@@ -29,8 +30,15 @@
     error: document.getElementById("load-error"),
     chartsNote: document.getElementById("charts-note"),
   };
+  const chips = Array.from(document.querySelectorAll("[data-chip]"));
+
+  const STATUS_ICONS = { "Open": "○", "In Progress": "◐", "Resolved": "✓", "Closed": "■" };
 
   // ---------- small helpers ----------
+  function slug(value) {
+    return value.toLowerCase().replace(/ /g, "-");
+  }
+
   function showError(message) {
     el.error.textContent = message;
     el.error.hidden = false;
@@ -51,12 +59,28 @@
     return td;
   }
 
-  function badgeCell(kind, value) {
+  function priorityCell(value) {
     const td = document.createElement("td");
     const span = document.createElement("span");
-    span.className = "badge badge-" + kind + "-" + value.toLowerCase().replace(/ /g, "-");
+    span.className = "badge badge-priority-" + slug(value);
     span.textContent = value;
     td.appendChild(span);
+    return td;
+  }
+
+  function statusCell(value) {
+    const td = document.createElement("td");
+    const pill = document.createElement("span");
+    pill.className = "pill pill-status-" + slug(value);
+
+    const icon = document.createElement("span");
+    icon.className = "pill-icon";
+    icon.setAttribute("aria-hidden", "true"); // the text next to it carries the meaning
+    icon.textContent = STATUS_ICONS[value] || "•";
+
+    pill.appendChild(icon);
+    pill.appendChild(document.createTextNode(value));
+    td.appendChild(pill);
     return td;
   }
 
@@ -89,6 +113,7 @@
     el.body.replaceChildren();
     tickets.forEach(function (ticket) {
       const row = document.createElement("tr");
+      row.className = "prio-" + slug(ticket.priority); // colored strip on the left edge
       row.dataset.testid = "dashboard-ticket-row";
 
       row.appendChild(textCell("#" + ticket.id));
@@ -98,8 +123,8 @@
       }
       row.appendChild(textCell(ticket.assignee ? ticket.assignee.name : "Unassigned"));
       row.appendChild(textCell(ticket.category));
-      row.appendChild(badgeCell("priority", ticket.priority));
-      row.appendChild(badgeCell("status", ticket.status));
+      row.appendChild(priorityCell(ticket.priority));
+      row.appendChild(statusCell(ticket.status));
       row.appendChild(textCell(ticket.created_at.slice(0, 10)));
 
       el.body.appendChild(row);
@@ -136,6 +161,11 @@
         params.set(key, filters[key]);
       }
     });
+    if (state.scope === "me") {
+      params.set("assigned", "me");
+    } else if (state.scope === "unassigned") {
+      params.set("unassigned", "true");
+    }
 
     try {
       const data = await getJson("/api/tickets?" + params.toString());
@@ -153,7 +183,7 @@
     }
   }
 
-  // ---------- summary cards and charts ----------
+  // ---------- summary cards, chip counts and charts ----------
   const STATUS_COLORS = {
     "Open": "#3b82f6",
     "In Progress": "#f59e0b",
@@ -178,6 +208,22 @@
     };
     document.querySelectorAll("[data-stat]").forEach(function (node) {
       const value = values[node.dataset.stat];
+      if (value !== undefined) {
+        node.textContent = value;
+      }
+    });
+
+    const chipValues = {
+      "all": stats.total,
+      "mine": stats.assigned_to_me,
+      "unassigned": stats.unassigned,
+      "urgent": stats.by_priority["Urgent"],
+      "open": stats.by_status["Open"],
+      "in-progress": stats.by_status["In Progress"],
+      "resolved": stats.by_status["Resolved"],
+    };
+    document.querySelectorAll("[data-chip-count]").forEach(function (node) {
+      const value = chipValues[node.dataset.chipCount];
       if (value !== undefined) {
         node.textContent = value;
       }
@@ -246,11 +292,73 @@
     }
   }
 
+  // ---------- chips ----------
+  function clearFilters() {
+    el.search.value = "";
+    el.status.value = "";
+    el.priority.value = "";
+    el.category.value = "";
+    state.scope = "";
+  }
+
+  function chipIsOn(name) {
+    switch (name) {
+      case "all":
+        return !state.scope && !el.status.value && !el.priority.value &&
+          !el.category.value && !el.search.value.trim();
+      case "mine":
+        return state.scope === "me";
+      case "unassigned":
+        return state.scope === "unassigned";
+      case "urgent":
+        return el.priority.value === "Urgent";
+      case "open":
+        return el.status.value === "Open";
+      case "in-progress":
+        return el.status.value === "In Progress";
+      case "resolved":
+        return el.status.value === "Resolved";
+      default:
+        return false;
+    }
+  }
+
+  function syncChips() {
+    chips.forEach(function (chip) {
+      chip.setAttribute("aria-pressed", String(chipIsOn(chip.dataset.chip)));
+    });
+  }
+
+  function applyChip(name) {
+    clearFilters(); // a chip starts a fresh view
+    if (name === "mine") {
+      state.scope = "me";
+    } else if (name === "unassigned") {
+      state.scope = "unassigned";
+    } else if (name === "urgent") {
+      el.priority.value = "Urgent";
+    } else if (name === "open") {
+      el.status.value = "Open";
+    } else if (name === "in-progress") {
+      el.status.value = "In Progress";
+    } else if (name === "resolved") {
+      el.status.value = "Resolved";
+    }
+    applyFilters();
+  }
+
   // ---------- events ----------
   function applyFilters() {
     state.page = 1; // any change in filters starts again from page 1
+    syncChips();
     loadTickets();
   }
+
+  chips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      applyChip(chip.dataset.chip);
+    });
+  });
 
   el.search.addEventListener("input", function () {
     clearTimeout(searchTimer);
@@ -263,10 +371,7 @@
     event.preventDefault();
   });
   el.reset.addEventListener("click", function () {
-    el.search.value = "";
-    el.status.value = "";
-    el.priority.value = "";
-    el.category.value = "";
+    clearFilters();
     applyFilters();
   });
   el.prev.addEventListener("click", function () {
@@ -279,6 +384,7 @@
   });
 
   // ---------- start ----------
+  syncChips();
   loadStats();
   loadTickets();
 })();

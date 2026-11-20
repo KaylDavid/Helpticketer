@@ -717,3 +717,103 @@ textarea.input {
     transition: none;
   }
 }
+
+/* ---------- 7. Dashboard v2 (Step 14.2) ---------- */
+.page-sub {
+  margin: 0.15rem 0 0;
+}
+
+.stat-card {
+  border-top: 3px solid var(--teal-700);
+}
+
+/* Quick-filter chips */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem 0.4rem 0.9rem;
+  font: inherit;
+  font-weight: 600;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.chip:hover {
+  background: var(--surface-2);
+}
+
+.chip[aria-pressed="true"] {
+  background: var(--teal-900);
+  border-color: var(--teal-900);
+  color: #fff;
+}
+
+.chip[aria-pressed="true"]::before {
+  content: "✓"; /* the active chip is not shown by color alone */
+}
+
+.chip-count {
+  min-width: 1.6rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.chip[aria-pressed="true"] .chip-count {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+/* Status pills: icon + text */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.7rem 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.pill-icon {
+  font-size: 0.85em;
+  line-height: 1;
+}
+
+.pill-status-open { background: #dbeafe; color: #1e3a8a; border-color: #93c5fd; }
+.pill-status-in-progress { background: #fef3c7; color: #78350f; border-color: #fcd34d; }
+.pill-status-resolved { background: #dcfce7; color: #14532d; border-color: #86efac; }
+.pill-status-closed { background: #e5e7eb; color: #374151; border-color: #d1d5db; }
+
+/* Priority strip on the left edge of each ticket row */
+.table tbody tr[class*="prio-"] td:first-child {
+  padding-left: 1rem;
+  box-shadow: inset 5px 0 0 var(--strip, transparent);
+}
+
+.prio-low { --strip: #6b7280; }
+.prio-medium { --strip: #0284c7; }
+.prio-high { --strip: #ea580c; }
+.prio-urgent { --strip: #b91c1c; }
+
+@media (max-width: 600px) {
+  .chip-row {
+    gap: 0.4rem;
+  }
+}
