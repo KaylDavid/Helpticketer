@@ -1,47 +1,78 @@
+{% from "_icons.html" import icon, logo %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f3b40">
   <title>{% block title %}Helpticketer{% endblock %}</title>
+  <script>document.documentElement.classList.add("js");</script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
-<body>
+<body class="{{ 'has-sidebar' if current_user.is_authenticated else 'no-sidebar' }}">
   <a class="skip-link" href="#main">Skip to main content</a>
 
-  <header class="site-header">
-    <a class="brand" href="{{ url_for('dashboard.home') }}">Helpticketer</a>
-    <nav class="nav" aria-label="Main">
+  {% if current_user.is_authenticated %}
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="{{ url_for('dashboard.home') }}">{{ logo() }}<span>Helpticketer</span></a>
+
+    <nav class="side-nav" aria-label="Main">
+      <a class="side-cta" href="{{ url_for('tickets.new') }}" data-testid="nav-new-ticket"{% if request.endpoint == 'tickets.new' %} aria-current="page"{% endif %}>{{ icon("plus") }}<span>New ticket</span></a>
+
+      <p class="side-label">Workspace</p>
+      <a class="side-link{% if request.endpoint == 'dashboard.home' %} is-active{% endif %}" href="{{ url_for('dashboard.home') }}" data-testid="nav-dashboard"{% if request.endpoint == 'dashboard.home' %} aria-current="page"{% endif %}>{{ icon("grid") }}<span>Dashboard</span></a>
+      <a class="side-link{% if request.endpoint in ('tickets.index', 'tickets.detail') %} is-active{% endif %}" href="{{ url_for('tickets.index') }}" data-testid="nav-tickets"{% if request.endpoint == 'tickets.index' %} aria-current="page"{% endif %}>{{ icon("list") }}<span>{% if current_user.is_staff %}All tickets{% else %}My tickets{% endif %}</span></a>
+    </nav>
+
+    <div class="side-footer">
+      <div class="user-chip" data-testid="nav-user">
+        <span class="avatar" aria-hidden="true">{{ current_user.name[:1]|upper }}</span>
+        <span class="user-meta">
+          <span class="user-name">{{ current_user.name }}</span>
+          <span class="user-role">{{ current_user.role }}</span>
+        </span>
+      </div>
+      <form method="post" action="{{ url_for('auth.logout') }}" class="inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="side-logout" data-testid="logout-button">{{ icon("logout") }}<span>Log out</span></button>
+      </form>
+    </div>
+  </aside>
+  <div class="sidebar-backdrop" id="sidebar-backdrop" hidden></div>
+  {% endif %}
+
+  <div class="app-main">
+    <header class="topbar">
       {% if current_user.is_authenticated %}
-        <a href="{{ url_for('dashboard.home') }}" data-testid="nav-dashboard"{% if request.endpoint == 'dashboard.home' %} aria-current="page"{% endif %}>Dashboard</a>
-        <a href="{{ url_for('tickets.index') }}" data-testid="nav-tickets"{% if request.endpoint == 'tickets.index' %} aria-current="page"{% endif %}>Tickets</a>
-        <a href="{{ url_for('tickets.new') }}" data-testid="nav-new-ticket"{% if request.endpoint == 'tickets.new' %} aria-current="page"{% endif %}>New ticket</a>
-        <span class="nav-user" data-testid="nav-user">{{ current_user.name }} ({{ current_user.role }})</span>
-        <form method="post" action="{{ url_for('auth.logout') }}" class="inline-form">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="btn btn-small" data-testid="logout-button">Log out</button>
-        </form>
-      {% else %}
+      <button type="button" class="menu-button" id="menu-toggle" aria-label="Open menu" aria-controls="sidebar" aria-expanded="false" data-testid="menu-toggle">{{ icon("menu") }}</button>
+      {% endif %}
+      <a class="brand brand-top" href="{{ url_for('dashboard.home') }}">{{ logo() }}<span>Helpticketer</span></a>
+      {% if not current_user.is_authenticated %}
+      <nav class="top-links" aria-label="Account">
         <a href="{{ url_for('auth.login') }}">Log in</a>
         <a href="{{ url_for('auth.register') }}">Register</a>
+      </nav>
       {% endif %}
-    </nav>
-  </header>
+    </header>
 
-  <main class="container" id="main" tabindex="-1">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="flash-area">
-          {% for category, message in messages %}
-            <div class="flash flash-{{ category }}" role="{{ 'alert' if category == 'error' else 'status' }}" data-testid="flash-message">{{ message }}</div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
+    <main class="container" id="main" tabindex="-1">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-area">
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}" role="{{ 'alert' if category == 'error' else 'status' }}" data-testid="flash-message">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
 
-    {% block content %}{% endblock %}
-  </main>
+      {% block content %}{% endblock %}
+    </main>
+  </div>
 
+  {% if current_user.is_authenticated %}
+  <script src="{{ url_for('static', filename='js/shell.js') }}" defer></script>
+  {% endif %}
   {% block scripts %}{% endblock %}
 </body>
 </html>
