@@ -7,6 +7,10 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
+# Test coverage output
+htmlcov/
+.coverage
+
 # Database and Flask instance folder
 instance/
 *.db

@@ -25,6 +25,7 @@ def app():
         yield app
         db.session.remove()
         db.drop_all()
+        db.engine.dispose()  # close the database connection so nothing leaks
 
 
 @pytest.fixture
