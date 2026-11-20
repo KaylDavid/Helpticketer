@@ -39,16 +39,16 @@
   {% if can_edit %}
   <div class="tools-grid">
     <form method="post" action="{{ url_for('tickets.assign', ticket_id=ticket.id) }}" novalidate data-testid="assign-form">
-      {{ assign_form.hidden_tag() }}
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       {{ render_field(assign_form.assignee, "assign-select") }}
-      {{ assign_form.submit(class_="btn btn-primary", data_testid="assign-submit") }}
+      {{ assign_form.submit(id="assign-submit", class_="btn btn-primary", data_testid="assign-submit") }}
     </form>
 
     <form method="post" action="{{ url_for('tickets.update_status', ticket_id=ticket.id) }}" novalidate data-testid="status-form">
-      {{ status_form.hidden_tag() }}
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       {{ render_field(status_form.status, "status-select") }}
       {{ render_field(status_form.resolution_note, "resolution-note") }}
-      {{ status_form.submit(class_="btn btn-primary", data_testid="status-submit") }}
+      {{ status_form.submit(id="status-submit", class_="btn btn-primary", data_testid="status-submit") }}
     </form>
   </div>
   {% else %}
@@ -79,9 +79,9 @@
 
   {% if can_comment %}
   <form method="post" action="{{ url_for('tickets.post_comment', ticket_id=ticket.id) }}" novalidate data-testid="comment-form">
-    {{ form.hidden_tag() }}
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     {{ render_field(form.body, "comment-body") }}
-    {{ form.submit(class_="btn btn-primary", data_testid="comment-submit") }}
+    {{ form.submit(id="comment-submit", class_="btn btn-primary", data_testid="comment-submit") }}
   </form>
   {% else %}
   <p class="muted" data-testid="comments-closed">This ticket is closed, so new comments are not allowed.</p>
