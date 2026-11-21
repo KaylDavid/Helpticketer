@@ -3,7 +3,7 @@ import os
 import click
 from flask import Flask, jsonify, render_template, request
 
-from .config import config_by_name
+from .config import DEFAULT_SECRET_KEY, config_by_name
 from .extensions import csrf, db, login_manager
 
 
@@ -14,6 +14,11 @@ def create_app(config_name=None):
 
     app = Flask(__name__)
     app.config.from_object(config_by_name[config_name])
+
+    # A forged session cookie would let anyone log in as anyone, so a real
+    # production site must never run on the public default key.
+    if config_name == "production" and app.config["SECRET_KEY"] in (DEFAULT_SECRET_KEY, "", None):
+        raise RuntimeError("Set a real SECRET_KEY environment variable before running in production.")
 
     # Attach the extensions to this app
     db.init_app(app)
@@ -128,4 +133,13 @@ def create_app(config_name=None):
         print(f"Demo data loaded: {users} users, {tickets} tickets, {comments} comments.")
         print(f"Demo accounts: user@demo.com, agent@demo.com, admin@demo.com (password: {DEMO_PASSWORD})")
 
+
+
+    @app.after_request
+    def add_security_headers(response):
+        """Cheap protections sent with every response."""
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")  # no MIME guessing
+        response.headers.setdefault("X-Frame-Options", "DENY")  # cannot be put in an iframe
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        return response
     return app

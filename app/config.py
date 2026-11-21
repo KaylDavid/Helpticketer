@@ -1,18 +1,24 @@
 import os
 
+DEFAULT_SECRET_KEY = "dev-only-change-me"
+
 
 class Config:
     """Settings shared by every environment."""
 
     # Used to sign session cookies and CSRF tokens.
-    # In production we will set a real secret in an environment variable.
-    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-change-me")
+    # Production refuses to start unless a real SECRET_KEY is set (see create_app).
+    SECRET_KEY = os.environ.get("SECRET_KEY", DEFAULT_SECRET_KEY)
 
     # SQLite file. Flask-SQLAlchemy stores it inside the "instance" folder.
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///helpticketer.db")
 
     # Show the "Try the demo" box on the login page? Off unless an environment turns it on.
     SHOW_DEMO_LOGINS = False
+
+    # Cookies: not readable by JavaScript, and not sent from other sites' forms.
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
 
 
 class DevelopmentConfig(Config):
@@ -31,6 +37,8 @@ class TestingConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
+    # Cookies are only sent over HTTPS (Render provides HTTPS).
+    SESSION_COOKIE_SECURE = True
     # A public demo site sets SHOW_DEMO_LOGINS=1. A real deployment leaves it unset.
     SHOW_DEMO_LOGINS = os.environ.get("SHOW_DEMO_LOGINS") == "1"
 
