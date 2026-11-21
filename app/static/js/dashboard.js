@@ -8,9 +8,12 @@
 
   const isStaff = root.dataset.isStaff === "true";
   const PAGE_SIZE = 10;
+  const BOARD_LIMIT = 50; // the API's largest page size
+  const STATUSES = ["Open", "In Progress", "Resolved", "Closed"];
+  const VIEW_KEY = "helpticketer-view";
 
   // scope is the "assigned" filter: "" (none), "me", or "unassigned"
-  const state = { page: 1, scope: "" };
+  const state = { page: 1, scope: "", view: "table" };
   let requestId = 0; // used to ignore out-of-date responses
   let searchTimer = null;
 
@@ -29,8 +32,11 @@
     pageInfo: document.getElementById("page-info"),
     error: document.getElementById("load-error"),
     chartsNote: document.getElementById("charts-note"),
+    tableView: document.getElementById("table-view"),
+    boardView: document.getElementById("board-view"),
   };
   const chips = Array.from(document.querySelectorAll("[data-chip]"));
+  const viewButtons = Array.from(document.querySelectorAll("[data-view]"));
 
   const STATUS_ICONS = { "Open": "○", "In Progress": "◐", "Resolved": "✓", "Closed": "■" };
 
@@ -59,12 +65,16 @@
     return td;
   }
 
-  function priorityCell(value) {
-    const td = document.createElement("td");
+  function priorityBadge(value) {
     const span = document.createElement("span");
     span.className = "badge badge-priority-" + slug(value);
     span.textContent = value;
-    td.appendChild(span);
+    return span;
+  }
+
+  function priorityCell(value) {
+    const td = document.createElement("td");
+    td.appendChild(priorityBadge(value));
     return td;
   }
 
@@ -108,7 +118,28 @@
     return data;
   }
 
-  // ---------- ticket table ----------
+  // The filters shared by the table and the board (everything except status and paging).
+  function baseParams() {
+    const params = new URLSearchParams();
+    const filters = {
+      priority: el.priority.value,
+      category: el.category.value,
+      q: el.search.value.trim(),
+    };
+    Object.keys(filters).forEach(function (key) {
+      if (filters[key]) {
+        params.set(key, filters[key]);
+      }
+    });
+    if (state.scope === "me") {
+      params.set("assigned", "me");
+    } else if (state.scope === "unassigned") {
+      params.set("unassigned", "true");
+    }
+    return params;
+  }
+
+  // ---------- table view ----------
   function renderRows(tickets) {
     el.body.replaceChildren();
     tickets.forEach(function (ticket) {
@@ -149,22 +180,11 @@
   async function loadTickets() {
     const myRequest = ++requestId;
 
-    const params = new URLSearchParams({ page: state.page, per_page: PAGE_SIZE });
-    const filters = {
-      status: el.status.value,
-      priority: el.priority.value,
-      category: el.category.value,
-      q: el.search.value.trim(),
-    };
-    Object.keys(filters).forEach(function (key) {
-      if (filters[key]) {
-        params.set(key, filters[key]);
-      }
-    });
-    if (state.scope === "me") {
-      params.set("assigned", "me");
-    } else if (state.scope === "unassigned") {
-      params.set("unassigned", "true");
+    const params = baseParams();
+    params.set("page", state.page);
+    params.set("per_page", PAGE_SIZE);
+    if (el.status.value) {
+      params.set("status", el.status.value);
     }
 
     try {
@@ -180,6 +200,147 @@
         return;
       }
       showError("Could not load tickets: " + error.message);
+    }
+  }
+
+  // ---------- board view ----------
+  function boardNote(text) {
+    const li = document.createElement("li");
+    li.className = "board-note muted";
+    li.textContent = text;
+    return li;
+  }
+
+  function boardCard(ticket) {
+    const li = document.createElement("li");
+    li.className = "board-card prio-" + slug(ticket.priority); // same colored strip as the table
+    li.dataset.testid = "board-card";
+
+    const link = document.createElement("a");
+    link.className = "board-card-title";
+    link.href = "/tickets/" + ticket.id;
+    link.textContent = ticket.title;
+    link.dataset.testid = "board-ticket-link";
+    li.appendChild(link);
+
+    const top = document.createElement("div");
+    top.className = "board-card-meta";
+    const id = document.createElement("span");
+    id.className = "muted";
+    id.textContent = "#" + ticket.id;
+    top.appendChild(id);
+    top.appendChild(priorityBadge(ticket.priority));
+    li.appendChild(top);
+
+    const who = document.createElement("p");
+    who.className = "board-card-line muted";
+    who.textContent = "Assigned: " + (ticket.assignee ? ticket.assignee.name : "Unassigned");
+    li.appendChild(who);
+
+    if (isStaff) {
+      const from = document.createElement("p");
+      from.className = "board-card-line muted";
+      from.textContent = "From: " + ticket.requester.name;
+      li.appendChild(from);
+    }
+    return li;
+  }
+
+  function renderColumn(status, result) {
+    const list = document.querySelector('[data-col-list="' + status + '"]');
+    const count = document.querySelector('[data-col-count="' + status + '"]');
+    list.replaceChildren();
+
+    if (result.skipped) {
+      count.textContent = "0";
+      list.appendChild(boardNote("Hidden by the status filter."));
+      return 0;
+    }
+
+    const data = result.data;
+    count.textContent = data.total;
+    if (data.tickets.length === 0) {
+      list.appendChild(boardNote("No tickets."));
+    }
+    data.tickets.forEach(function (ticket) {
+      list.appendChild(boardCard(ticket));
+    });
+    if (data.total > data.tickets.length) {
+      const more = data.total - data.tickets.length;
+      list.appendChild(boardNote(more + " more not shown. Narrow your filters or use the Table view."));
+    }
+    return data.total;
+  }
+
+  async function loadBoard() {
+    const myRequest = ++requestId;
+    const selected = el.status.value; // a status filter means only that column is loaded
+
+    try {
+      const results = await Promise.all(
+        STATUSES.map(async function (status) {
+          if (selected && selected !== status) {
+            return { status: status, skipped: true };
+          }
+          const params = baseParams();
+          params.set("status", status);
+          params.set("per_page", BOARD_LIMIT);
+          const data = await getJson("/api/tickets?" + params.toString());
+          return { status: status, data: data };
+        })
+      );
+
+      if (results.some(function (r) { return !r.skipped && r.data === null; })) {
+        return; // redirected to the login page
+      }
+      if (myRequest !== requestId) {
+        return; // a newer request has already replaced this one
+      }
+
+      clearError();
+      let total = 0;
+      results.forEach(function (result) {
+        total += renderColumn(result.status, result);
+      });
+      el.summary.textContent = total === 0 ? "No tickets found." : total + " tickets on the board";
+    } catch (error) {
+      if (myRequest !== requestId) {
+        return;
+      }
+      showError("Could not load the board: " + error.message);
+    }
+  }
+
+  function loadCurrent() {
+    if (state.view === "board") {
+      loadBoard();
+    } else {
+      loadTickets();
+    }
+  }
+
+  // ---------- table / board toggle ----------
+  function setView(view, remember) {
+    state.view = view;
+    el.tableView.hidden = view !== "table";
+    el.boardView.hidden = view !== "board";
+    viewButtons.forEach(function (button) {
+      button.setAttribute("aria-pressed", String(button.dataset.view === view));
+    });
+    if (remember) {
+      try {
+        window.localStorage.setItem(VIEW_KEY, view);
+      } catch (error) {
+        // storage can be blocked; the page still works, it just won't remember
+      }
+    }
+  }
+
+  function storedView() {
+    try {
+      return window.localStorage.getItem(VIEW_KEY) === "board" ? "board" : "table";
+    } catch (error) {
+      return "table";
     }
   }
 
@@ -351,12 +512,22 @@
   function applyFilters() {
     state.page = 1; // any change in filters starts again from page 1
     syncChips();
-    loadTickets();
+    loadCurrent();
   }
 
   chips.forEach(function (chip) {
     chip.addEventListener("click", function () {
       applyChip(chip.dataset.chip);
+    });
+  });
+
+  viewButtons.forEach(function (button) {
+    button.addEventListener("click", function () {
+      if (state.view === button.dataset.view) {
+        return;
+      }
+      setView(button.dataset.view, true);
+      loadCurrent();
     });
   });
 
@@ -384,7 +555,8 @@
   });
 
   // ---------- start ----------
+  setView(storedView(), false);
   syncChips();
   loadStats();
-  loadTickets();
+  loadCurrent();
 })();

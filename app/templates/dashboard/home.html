@@ -43,7 +43,13 @@
   </section>
 
   <section class="card" aria-label="Ticket list">
-    <h2 class="chart-title">Tickets</h2>
+    <div class="section-head">
+      <h2 class="chart-title">Tickets</h2>
+      <div class="view-toggle" role="group" aria-label="Choose a view">
+        <button type="button" class="view-btn" data-view="table" data-testid="view-table" aria-pressed="true">Table</button>
+        <button type="button" class="view-btn" data-view="board" data-testid="view-board" aria-pressed="false">Board</button>
+      </div>
+    </div>
 
     {% if current_user.is_staff %}
       {% set chips = [("all", "All"), ("mine", "Assigned to me"), ("unassigned", "Unassigned"), ("urgent", "Urgent")] %}
@@ -89,30 +95,43 @@
 
     <p class="muted" id="results-summary" aria-live="polite" data-testid="results-summary">Loading tickets...</p>
 
-    <div class="table-wrap">
-      <table class="table" data-testid="dashboard-table">
-        <thead>
-          <tr>
-            <th scope="col">ID</th>
-            <th scope="col">Title</th>
-            {% if current_user.is_staff %}<th scope="col">Requester</th>{% endif %}
-            <th scope="col">Assigned to</th>
-            <th scope="col">Category</th>
-            <th scope="col">Priority</th>
-            <th scope="col">Status</th>
-            <th scope="col">Created (UTC)</th>
-          </tr>
-        </thead>
-        <tbody id="tickets-body"></tbody>
-      </table>
+    <div id="table-view" data-testid="table-view">
+      <div class="table-wrap">
+        <table class="table" data-testid="dashboard-table">
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Title</th>
+              {% if current_user.is_staff %}<th scope="col">Requester</th>{% endif %}
+              <th scope="col">Assigned to</th>
+              <th scope="col">Category</th>
+              <th scope="col">Priority</th>
+              <th scope="col">Status</th>
+              <th scope="col">Created (UTC)</th>
+            </tr>
+          </thead>
+          <tbody id="tickets-body"></tbody>
+        </table>
+      </div>
+
+      <p class="muted" id="empty-state" data-testid="empty-state" hidden>No tickets match your filters.</p>
+
+      <div class="pager">
+        <button type="button" class="btn btn-small" id="pager-prev" data-testid="pager-prev" disabled>&larr; Previous</button>
+        <span id="page-info" data-testid="page-info">Page 1 of 1</span>
+        <button type="button" class="btn btn-small" id="pager-next" data-testid="pager-next" disabled>Next &rarr;</button>
+      </div>
     </div>
 
-    <p class="muted" id="empty-state" data-testid="empty-state" hidden>No tickets match your filters.</p>
-
-    <div class="pager">
-      <button type="button" class="btn btn-small" id="pager-prev" data-testid="pager-prev" disabled>&larr; Previous</button>
-      <span id="page-info" data-testid="page-info">Page 1 of 1</span>
-      <button type="button" class="btn btn-small" id="pager-next" data-testid="pager-next" disabled>Next &rarr;</button>
+    <div id="board-view" hidden data-testid="board-view">
+      <div class="board">
+        {% for s in statuses %}
+        <section class="board-col board-col-{{ s|lower|replace(' ', '-') }}" data-col="{{ s }}" data-testid="board-col-{{ s|lower|replace(' ', '-') }}">
+          <h3 class="board-col-title">{{ s }} <span class="board-count" data-col-count="{{ s }}">–</span></h3>
+          <ul class="board-list" data-col-list="{{ s }}"></ul>
+        </section>
+        {% endfor %}
+      </div>
     </div>
   </section>
 </div>
