@@ -1077,3 +1077,257 @@ textarea.input {
   padding: 0.25rem 0.1rem;
   font-size: 0.9rem;
 }
+
+/* ---------- 10. Polish: auth pages, empty states, dark theme (Step 14.5) ---------- */
+
+/* Link and focus colors become tokens so dark mode can lighten them */
+:root {
+  --link: var(--teal-700);
+  --focus: var(--teal-700);
+}
+
+a {
+  color: var(--link);
+}
+
+:focus-visible,
+.input:focus-visible {
+  outline-color: var(--focus);
+}
+
+/* Theme toggle: only shown when JavaScript runs */
+.theme-toggle {
+  display: none;
+}
+
+.js .theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.theme-toggle[aria-pressed="true"]::before {
+  content: "✓"; /* the pressed state is not shown by color alone */
+}
+
+.topbar-theme {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.topbar-theme:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Login and register: brand panel + form card */
+.auth-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  max-width: 880px;
+  margin: 1rem auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.auth-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem 1.75rem;
+  background: linear-gradient(160deg, var(--teal-900), var(--teal-700));
+  color: #fff;
+}
+
+.auth-kicker {
+  margin: 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #d3e9e7;
+}
+
+.auth-tagline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  line-height: 1.25;
+}
+
+.auth-points {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #e6f2f1;
+}
+
+.auth-card {
+  padding: 2rem 1.75rem;
+}
+
+.auth-card h1 {
+  margin-bottom: 0.25rem;
+}
+
+/* "Try the demo" box */
+.demo-box {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: var(--surface-2);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+}
+
+.demo-box h2 {
+  margin: 0 0 0.25rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+}
+
+.demo-box p {
+  margin: 0;
+}
+
+.demo-list {
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.demo-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.demo-fill {
+  display: none; /* only useful when JavaScript can fill in the form */
+}
+
+.js .demo-fill {
+  display: inline-flex;
+}
+
+.demo-pass code {
+  padding: 0.1rem 0.4rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.95em;
+}
+
+/* Empty states */
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
+  padding: 2.25rem 1rem;
+  text-align: center;
+}
+
+.empty p {
+  margin: 0;
+}
+
+.empty-art {
+  color: var(--teal-700);
+}
+
+.empty-title {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.empty .btn {
+  margin-top: 0.6rem;
+}
+
+.empty-small {
+  padding: 1rem;
+}
+
+@media (max-width: 700px) {
+  .auth-wrap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .auth-panel {
+    padding: 1.25rem 1.25rem;
+  }
+
+  .auth-points {
+    display: none;
+  }
+
+  .auth-card {
+    padding: 1.25rem;
+  }
+}
+
+@media (pointer: coarse) {
+  .topbar-theme,
+  .demo-fill {
+    min-height: 44px;
+  }
+}
+
+/* ----- Dark theme: swap the tokens, then fix a few hard-coded colors ----- */
+[data-theme="dark"] {
+  color-scheme: dark; /* dark scrollbars and native form controls */
+
+  --bg: #0e1517;
+  --surface: #172125;
+  --surface-2: #1f2c31;
+  --line: #2c3d43;
+  --line-strong: #7d9399;
+
+  --ink: #e7eeee;
+  --ink-muted: #a9bbbf;
+
+  --danger: #ff8f8f;
+  --link: #74d4d4;
+  --focus: #8fe3e3;
+}
+
+[data-theme="dark"] .table tbody tr:hover {
+  background: var(--surface-2);
+}
+
+[data-theme="dark"] .skip-link {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+[data-theme="dark"] .chip[aria-pressed="true"],
+[data-theme="dark"] .view-btn[aria-pressed="true"] {
+  background: var(--teal-700);
+  border-color: var(--teal-700);
+}
+
+[data-theme="dark"] .tl-dot {
+  color: var(--ink);
+}
+
+[data-theme="dark"] .tl-created .tl-dot {
+  color: #ff9b82;
+}
+
+[data-theme="dark"] .tl-comment .tl-dot {
+  color: var(--teal-900); /* this dot keeps its light background */
+}
+
+[data-theme="dark"] .empty-art {
+  color: var(--link);
+}

@@ -391,7 +391,13 @@
     });
   }
 
-  function drawCharts(stats) {
+    function drawCharts(stats) {
+    if (typeof Chart !== "undefined") {
+      // Chart.js text and grid lines follow the current theme
+      const css = getComputedStyle(document.documentElement);
+      Chart.defaults.color = css.getPropertyValue("--ink-muted").trim() || "#4a5a60";
+      Chart.defaults.borderColor = css.getPropertyValue("--line").trim() || "#e4ddd0";
+    }
     if (typeof Chart === "undefined") {
       el.chartsNote.textContent = "Charts could not be loaded. The numbers above are still correct.";
       el.chartsNote.hidden = false;

@@ -4,14 +4,48 @@
 {% block title %}Log in - Helpticketer{% endblock %}
 
 {% block content %}
-<section class="card card-narrow">
-  <h1>Log in</h1>
-  <form method="post" novalidate data-testid="login-form">
-    {{ form.hidden_tag() }}
-    {{ render_field(form.email, "login-email") }}
-    {{ render_field(form.password, "login-password") }}
-    {{ form.submit(class_="btn btn-primary", data_testid="login-submit") }}
-  </form>
-  <p class="muted">No account yet? <a href="{{ url_for('auth.register') }}">Register</a></p>
-</section>
+<div class="auth-wrap">
+  <div class="auth-panel">
+    <p class="auth-kicker">Helpticketer</p>
+    <p class="auth-tagline">Support requests, handled with care.</p>
+    <ul class="auth-points">
+      <li>Send a ticket in under a minute</li>
+      <li>Follow every step in the activity timeline</li>
+      <li>Agents see the whole queue on one board</li>
+    </ul>
+  </div>
+
+  <section class="auth-card">
+    <h1>Welcome back</h1>
+    <p class="muted">Log in to see your tickets.</p>
+
+    <form method="post" novalidate data-testid="login-form">
+      {{ form.hidden_tag() }}
+      {{ render_field(form.email, "login-email") }}
+      {{ render_field(form.password, "login-password") }}
+      {{ form.submit(class_="btn btn-primary", data_testid="login-submit") }}
+    </form>
+    <p class="muted">No account yet? <a href="{{ url_for('auth.register') }}">Register</a></p>
+
+    {% if demo %}
+    <div class="demo-box" data-testid="demo-accounts">
+      <h2>Try the demo</h2>
+      <p class="muted">Everything here is fake data. Pick a role to fill in the form.</p>
+      <ul class="demo-list">
+        {% for name, email, role in demo.accounts %}
+        <li>
+          <span><strong>{{ role|capitalize }}</strong> <span class="muted">{{ email }}</span></span>
+          <button type="button" class="btn btn-small demo-fill" data-email="{{ email }}" data-password="{{ demo.password }}" aria-label="Fill in the {{ role }} demo account" data-testid="demo-fill-{{ role }}">Use</button>
+        </li>
+        {% endfor %}
+      </ul>
+      <p class="muted demo-pass">Password for all: <code>{{ demo.password }}</code></p>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/auth.js') }}" defer></script>
 {% endblock %}

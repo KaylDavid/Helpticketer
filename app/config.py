@@ -11,9 +11,13 @@ class Config:
     # SQLite file. Flask-SQLAlchemy stores it inside the "instance" folder.
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///helpticketer.db")
 
+    # Show the "Try the demo" box on the login page? Off unless an environment turns it on.
+    SHOW_DEMO_LOGINS = False
+
 
 class DevelopmentConfig(Config):
     DEBUG = True
+    SHOW_DEMO_LOGINS = True
 
 
 class TestingConfig(Config):
@@ -27,6 +31,8 @@ class TestingConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
+    # A public demo site sets SHOW_DEMO_LOGINS=1. A real deployment leaves it unset.
+    SHOW_DEMO_LOGINS = os.environ.get("SHOW_DEMO_LOGINS") == "1"
 
 
 config_by_name = {

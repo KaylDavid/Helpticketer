@@ -1,0 +1,14 @@
+{# A friendly empty state: picture, headline, one sentence, and an optional button #}
+{% macro empty_state(title, text, href=None, label=None, testid=None) %}
+<div class="empty"{% if testid %} data-testid="{{ testid }}"{% endif %}>
+  <svg class="empty-art" viewBox="0 0 120 90" width="120" height="90" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+    <rect x="14" y="22" width="92" height="54" rx="9"/>
+    <path d="M14 42h92"/>
+    <path d="M30 58h26M30 66h14"/>
+    <circle cx="88" cy="62" r="7"/>
+  </svg>
+  <p class="empty-title">{{ title }}</p>
+  <p class="muted">{{ text }}</p>
+  {% if href %}<a class="btn btn-primary" href="{{ href }}">{{ label }}</a>{% endif %}
+</div>
+{% endmacro %}

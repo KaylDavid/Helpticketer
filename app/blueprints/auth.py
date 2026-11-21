@@ -1,11 +1,15 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
 from ..extensions import db
 from ..forms import LoginForm, RegistrationForm
 from ..models import User
+from ..services.seed import DEMO_PASSWORD, DEMO_USERS
 
 bp = Blueprint("auth", __name__)
+
+# One demo account per role is enough for a visitor to try the app.
+DEMO_LOGIN_EMAILS = ("user@demo.com", "agent@demo.com", "admin@demo.com")
 
 
 def is_safe_redirect(target):
@@ -13,6 +17,14 @@ def is_safe_redirect(target):
     if not target:
         return False
     return target.startswith("/") and not target.startswith("//") and "\\" not in target
+
+
+def demo_accounts():
+    """The accounts to show in the "Try the demo" box, or None when it is switched off."""
+    if not current_app.config.get("SHOW_DEMO_LOGINS"):
+        return None
+    accounts = [user for user in DEMO_USERS if user[1] in DEMO_LOGIN_EMAILS]
+    return {"password": DEMO_PASSWORD, "accounts": accounts}
 
 
 @bp.route("/register", methods=["GET", "POST"])
@@ -55,7 +67,7 @@ def login():
                 return redirect(next_page)
             return redirect(url_for("dashboard.home"))
 
-    return render_template("auth/login.html", form=form)
+    return render_template("auth/login.html", form=form, demo=demo_accounts())
 
 
 @bp.route("/logout", methods=["POST"])

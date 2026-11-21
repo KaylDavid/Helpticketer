@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_pills.html" import status_pill %}
+{% from "_empty.html" import empty_state %}
 
 {% block title %}Tickets - Helpticketer{% endblock %}
 
@@ -39,8 +40,10 @@
       </tbody>
     </table>
   </div>
+  {% elif current_user.is_staff %}
+  {{ empty_state("The queue is empty", "When someone submits a ticket, it will show up here.", testid="no-tickets") }}
   {% else %}
-  <p class="muted" data-testid="no-tickets">No tickets yet. Click "New ticket" to submit one.</p>
+  {{ empty_state("No tickets yet", "Having a problem? Send us a ticket and follow it here.", url_for('tickets.new'), "Submit your first ticket", "no-tickets") }}
   {% endif %}
 </section>
 {% endblock %}
