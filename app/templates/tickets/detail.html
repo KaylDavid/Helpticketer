@@ -1,90 +1,106 @@
 {% extends "base.html" %}
 {% from "_macros.html" import render_field %}
+{% from "_pills.html" import status_pill %}
 
 {% block title %}Ticket #{{ ticket.id }} - Helpticketer{% endblock %}
 
 {% block content %}
+{% set glyphs = {"created": "●", "assigned": "→", "status": "◐", "comment": "✎"} %}
+
 <p><a href="{{ url_for('tickets.index') }}" data-testid="back-to-list">&larr; Back to tickets</a></p>
 
-<section class="card">
-  <div class="page-header">
-    <h1 data-testid="ticket-title">#{{ ticket.id }} {{ ticket.title }}</h1>
-    <div>
-      <span class="badge badge-priority-{{ ticket.priority|lower }}" data-testid="ticket-priority-badge">{{ ticket.priority }}</span>
-      <span class="badge badge-status-{{ ticket.status|lower|replace(' ', '-') }}" data-testid="ticket-status-badge">{{ ticket.status }}</span>
-    </div>
+<div class="page-header">
+  <h1 data-testid="ticket-title">#{{ ticket.id }} {{ ticket.title }}</h1>
+  <div class="head-badges">
+    <span class="badge badge-priority-{{ ticket.priority|lower }}" data-testid="ticket-priority-badge">{{ ticket.priority }}</span>
+    {{ status_pill(ticket.status, "ticket-status-badge") }}
+  </div>
+</div>
+
+<div class="ticket-layout">
+  <div class="ticket-main">
+    <section class="card">
+      <h2 class="first-h2">Description</h2>
+      <p class="pre-wrap" data-testid="ticket-description">{{ ticket.description }}</p>
+
+      {% if ticket.resolution_note %}
+      <h2>Resolution note</h2>
+      <p class="pre-wrap resolution-box" data-testid="ticket-resolution">{{ ticket.resolution_note }}</p>
+      {% endif %}
+    </section>
+
+    <section class="card section-gap">
+      <h2 class="first-h2">Activity</h2>
+
+      <ol class="timeline" data-testid="timeline">
+        {% for item in timeline %}
+        <li class="tl-item tl-{{ item.kind }}" data-testid="{{ 'comment' if item.kind == 'comment' else 'timeline-item' }}">
+          <span class="tl-dot" aria-hidden="true">{{ glyphs.get(item.kind, "•") }}</span>
+          <div class="tl-content">
+            <p class="tl-line">
+              <strong>{{ item.actor_name }}</strong>
+              {% if item.actor_role in ('agent', 'admin') %}<span class="badge badge-staff">{{ item.actor_role }}</span>{% endif %}
+              {{ item.text }}
+              <time class="muted tl-time" datetime="{{ item.when.strftime('%Y-%m-%dT%H:%M') }}Z">{{ item.when.strftime('%Y-%m-%d %H:%M') }} UTC</time>
+            </p>
+            {% if item.body %}<p class="pre-wrap tl-bubble">{{ item.body }}</p>{% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ol>
+
+      {% if ticket.comments|length == 0 %}
+      <p class="muted" data-testid="no-comments">No comments yet.</p>
+      {% endif %}
+
+      {% if can_comment %}
+      <form method="post" action="{{ url_for('tickets.post_comment', ticket_id=ticket.id) }}" novalidate data-testid="comment-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {{ render_field(form.body, "comment-body") }}
+        {{ form.submit(id="comment-submit", class_="btn btn-primary", data_testid="comment-submit") }}
+      </form>
+      {% else %}
+      <p class="muted" data-testid="comments-closed">This ticket is closed, so new comments are not allowed.</p>
+      {% endif %}
+    </section>
   </div>
 
-  <dl class="meta-grid">
-    <div><dt>Requester</dt><dd data-testid="ticket-requester">{{ ticket.requester.name }}</dd></div>
-    <div><dt>Assigned to</dt><dd data-testid="ticket-assignee">{{ ticket.assignee.name if ticket.assignee else "Unassigned" }}</dd></div>
-    <div><dt>Category</dt><dd>{{ ticket.category }}</dd></div>
-    <div><dt>Created (UTC)</dt><dd>{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
-    <div><dt>Last updated (UTC)</dt><dd>{{ ticket.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
-  </dl>
+  <aside class="ticket-side" aria-label="Ticket details and tools">
+    <section class="card">
+      <h2 class="first-h2">Details</h2>
+      <dl class="detail-list">
+        <div><dt>Requester</dt><dd data-testid="ticket-requester">{{ ticket.requester.name }}</dd></div>
+        <div><dt>Assigned to</dt><dd data-testid="ticket-assignee">{{ ticket.assignee.name if ticket.assignee else "Unassigned" }}</dd></div>
+        <div><dt>Category</dt><dd>{{ ticket.category }}</dd></div>
+        <div><dt>Created (UTC)</dt><dd>{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+        <div><dt>Last updated (UTC)</dt><dd>{{ ticket.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd></div>
+      </dl>
+    </section>
 
-  <h2>Description</h2>
-  <p class="pre-wrap" data-testid="ticket-description">{{ ticket.description }}</p>
+    {# Agent tools: only staff get these forms (the routes also check the role) #}
+    {% if assign_form is not none and status_form is not none %}
+    <section class="card section-gap" data-testid="staff-panel">
+      <h2 class="first-h2">Agent tools</h2>
+      {% if can_edit %}
+      <div class="tools-stack">
+        <form method="post" action="{{ url_for('tickets.assign', ticket_id=ticket.id) }}" novalidate data-testid="assign-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          {{ render_field(assign_form.assignee, "assign-select") }}
+          {{ assign_form.submit(id="assign-submit", class_="btn btn-primary", data_testid="assign-submit") }}
+        </form>
 
-  {% if ticket.resolution_note %}
-  <h2>Resolution note</h2>
-  <p class="pre-wrap" data-testid="ticket-resolution">{{ ticket.resolution_note }}</p>
-  {% endif %}
-</section>
-
-{# Agent tools: only staff get these forms (the routes also check the role) #}
-{% if assign_form is not none and status_form is not none %}
-<section class="card section-gap" data-testid="staff-panel">
-  <h2>Agent tools</h2>
-  {% if can_edit %}
-  <div class="tools-grid">
-    <form method="post" action="{{ url_for('tickets.assign', ticket_id=ticket.id) }}" novalidate data-testid="assign-form">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      {{ render_field(assign_form.assignee, "assign-select") }}
-      {{ assign_form.submit(id="assign-submit", class_="btn btn-primary", data_testid="assign-submit") }}
-    </form>
-
-    <form method="post" action="{{ url_for('tickets.update_status', ticket_id=ticket.id) }}" novalidate data-testid="status-form">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      {{ render_field(status_form.status, "status-select") }}
-      {{ render_field(status_form.resolution_note, "resolution-note") }}
-      {{ status_form.submit(id="status-submit", class_="btn btn-primary", data_testid="status-submit") }}
-    </form>
-  </div>
-  {% else %}
-  <p class="muted" data-testid="staff-closed-message">This ticket is closed, so it can no longer be changed.</p>
-  {% endif %}
-</section>
-{% endif %}
-
-<section class="card section-gap">
-  <h2>Comments ({{ ticket.comments|length }})</h2>
-
-  {% if ticket.comments %}
-  <ul class="comment-list" data-testid="comment-list">
-    {% for comment in ticket.comments %}
-    <li class="comment" data-testid="comment">
-      <div class="comment-meta">
-        <strong>{{ comment.author.name }}</strong>
-        {% if comment.author.is_staff %}<span class="badge badge-staff">{{ comment.author.role }}</span>{% endif %}
-        <span class="muted">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }} UTC</span>
+        <form method="post" action="{{ url_for('tickets.update_status', ticket_id=ticket.id) }}" novalidate data-testid="status-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          {{ render_field(status_form.status, "status-select") }}
+          {{ render_field(status_form.resolution_note, "resolution-note") }}
+          {{ status_form.submit(id="status-submit", class_="btn btn-primary", data_testid="status-submit") }}
+        </form>
       </div>
-      <p class="pre-wrap">{{ comment.body }}</p>
-    </li>
-    {% endfor %}
-  </ul>
-  {% else %}
-  <p class="muted" data-testid="no-comments">No comments yet.</p>
-  {% endif %}
-
-  {% if can_comment %}
-  <form method="post" action="{{ url_for('tickets.post_comment', ticket_id=ticket.id) }}" novalidate data-testid="comment-form">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    {{ render_field(form.body, "comment-body") }}
-    {{ form.submit(id="comment-submit", class_="btn btn-primary", data_testid="comment-submit") }}
-  </form>
-  {% else %}
-  <p class="muted" data-testid="comments-closed">This ticket is closed, so new comments are not allowed.</p>
-  {% endif %}
-</section>
+      {% else %}
+      <p class="muted" data-testid="staff-closed-message">This ticket is closed, so it can no longer be changed.</p>
+      {% endif %}
+    </section>
+    {% endif %}
+  </aside>
+</div>
 {% endblock %}

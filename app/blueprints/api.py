@@ -303,7 +303,7 @@ def update_status(ticket_id):
         return error_response("Validation failed.", 422, errors)
 
     try:
-        change_status(ticket, clean["status"], clean["resolution_note"])
+                change_status(ticket, clean["status"], clean["resolution_note"], actor=g.api_user)
     except ValueError as error:
         return error_response(str(error), 409)
 
@@ -334,7 +334,7 @@ def update_assignee(ticket_id):
             )
 
     try:
-        assign_ticket(ticket, assignee)
+                assign_ticket(ticket, assignee, actor=g.api_user)
     except ValueError as error:
         return error_response(str(error), 409)
 

@@ -6,7 +6,7 @@ from datetime import timedelta
 from sqlalchemy import func
 
 from ..extensions import db
-from ..models import Comment, Ticket, User, utcnow
+from ..models import Comment, Ticket, TicketEvent, User, utcnow
 
 DEMO_PASSWORD = "Demo1234!"
 
@@ -65,6 +65,14 @@ RESOLUTION_NOTES = {
     "Network": "Reset the connection settings and confirmed a stable link.",
     "Account Access": "Updated the account permissions and confirmed access.",
     "Other": "Answered the question and shared the IT policy document.",
+}
+
+# The status changes each demo ticket went through to reach its current status.
+STATUS_PATHS = {
+    "Open": [],
+    "In Progress": [("Open", "In Progress")],
+    "Resolved": [("Open", "In Progress"), ("In Progress", "Resolved")],
+    "Closed": [("Open", "In Progress"), ("In Progress", "Resolved"), ("Resolved", "Closed")],
 }
 
 STAFF_COMMENTS = [
@@ -129,6 +137,32 @@ def seed_demo_data():
             updated_at=updated,
         )
         db.session.add(ticket)
+
+        # Activity history. No random numbers are used here, so the rest of the
+        # demo data stays exactly the same as before.
+        if assignee:
+            db.session.add(
+                TicketEvent(
+                    ticket=ticket,
+                    actor=assignee,
+                    kind="assigned",
+                    detail="picked up this ticket",
+                    created_at=created + timedelta(minutes=30),
+                )
+            )
+        path = STATUS_PATHS[status]
+        for step, (old, new) in enumerate(path):
+            is_last = step == len(path) - 1
+            when = updated if is_last else created + timedelta(minutes=45 * (step + 1))
+            db.session.add(
+                TicketEvent(
+                    ticket=ticket,
+                    actor=assignee,
+                    kind="status",
+                    detail=f"changed the status from {old} to {new}",
+                    created_at=when,
+                )
+            )
 
         if assignee:
             first = created + timedelta(hours=1)

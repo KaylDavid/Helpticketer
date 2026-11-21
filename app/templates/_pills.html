@@ -1,5 +1,5 @@
 {# A status pill: an icon AND text, so the meaning never depends on color alone #}
-{% macro status_pill(status) %}
+{% macro status_pill(status, testid=None) %}
 {% set icons = {"Open": "○", "In Progress": "◐", "Resolved": "✓", "Closed": "■"} %}
-<span class="pill pill-status-{{ status|lower|replace(' ', '-') }}"><span class="pill-icon" aria-hidden="true">{{ icons.get(status, "•") }}</span>{{ status }}</span>
+<span class="pill pill-status-{{ status|lower|replace(' ', '-') }}"{% if testid %} data-testid="{{ testid }}"{% endif %}><span class="pill-icon" aria-hidden="true">{{ icons.get(status, "•") }}</span>{{ status }}</span>
 {% endmacro %}

@@ -92,6 +92,12 @@ class Ticket(db.Model):
         order_by="Comment.created_at",
         cascade="all, delete-orphan",
     )
+    events = db.relationship(
+        "TicketEvent",
+        back_populates="ticket",
+        order_by="TicketEvent.created_at",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self):
         return f"<Ticket #{self.id} {self.status}>"
@@ -112,3 +118,23 @@ class Comment(db.Model):
 
     def __repr__(self):
         return f"<Comment #{self.id} on ticket {self.ticket_id}>"
+
+
+class TicketEvent(db.Model):
+    """One line of ticket history: an assignment or a status change."""
+
+    __tablename__ = "ticket_events"
+
+    id = db.Column(db.Integer, primary_key=True)
+    kind = db.Column(db.String(20), nullable=False)  # "assigned" or "status"
+    detail = db.Column(db.String(255), nullable=False)  # e.g. "picked up this ticket"
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+
+    ticket_id = db.Column(db.Integer, db.ForeignKey("tickets.id"), nullable=False, index=True)
+    actor_id = db.Column(db.Integer, db.ForeignKey("users.id"))  # empty = done by the system
+
+    ticket = db.relationship("Ticket", back_populates="events")
+    actor = db.relationship("User")
+
+    def __repr__(self):
+        return f"<TicketEvent #{self.id} {self.kind} on ticket {self.ticket_id}>"

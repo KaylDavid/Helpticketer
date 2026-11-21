@@ -15,6 +15,7 @@ from ..services.tickets import (
     staff_users,
     visible_tickets_query,
 )
+from ..services.timeline import build_timeline
 
 bp = Blueprint("tickets", __name__, url_prefix="/tickets")
 
@@ -69,6 +70,7 @@ def render_detail(ticket, comment_form=None, assign_form=None, status_form=None)
         status_form=status_form,
         can_comment=can_comment(ticket),
         can_edit=ticket.status != "Closed",
+        timeline=build_timeline(ticket),
     )
 
 
@@ -102,7 +104,7 @@ def new():
 @bp.route("/<int:ticket_id>")
 @login_required
 def detail(ticket_id):
-    """Show one ticket with its comments."""
+    """Show one ticket with its activity timeline."""
     ticket = get_ticket_or_404(ticket_id)
     return render_detail(ticket)
 
@@ -137,7 +139,7 @@ def assign(ticket_id):
     if form.validate_on_submit():
         assignee = db.session.get(User, form.assignee.data) if form.assignee.data else None
         try:
-            assign_ticket(ticket, assignee)
+            assign_ticket(ticket, assignee, actor=current_user)
         except ValueError as error:
             flash(str(error), "error")
         else:
@@ -160,7 +162,7 @@ def update_status(ticket_id):
     if form.validate_on_submit():
         old_status = ticket.status
         try:
-            change_status(ticket, form.status.data, form.resolution_note.data)
+            change_status(ticket, form.status.data, form.resolution_note.data, actor=current_user)
         except ValueError as error:
             # Show the page again so the typed note is not lost
             flash(str(error), "error")
