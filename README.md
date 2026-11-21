@@ -146,7 +146,8 @@ pytest --cov=app --cov-report=term-missing -q  # with coverage
 - Tests use boundary values (a title of 3 and 120 characters passes, 2 and 121 fail), check every allowed and forbidden status move, and include security tests.
 - I broke rules on purpose during development (for example, letting a cookie write through the API) and confirmed the right tests failed.
 
-**Accessibility:** automated structure tests plus manual keyboard and phone-width checks. [[Optional: add your Lighthouse accessibility scores here, only if you ran it.]]
+**Accessibility:** automated structure tests plus manual keyboard and phone-width checks. 
+| ![lighthouse-score](docs/screenshots/lighthouse-dashboard.png) | [lighthouse-score](docs/screenshots/lighthouse-login.png)
 
 ## Honest limitations
 
