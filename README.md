@@ -32,9 +32,8 @@ The login page has a "Try the demo" box. All data is fake.
 
 | | |
 |---|---|
-| ![Login](docs/screenshots/loginlight.png) 
-| ![Login](docs/screenshots/logindark.png) | ![Board](docs/screenshots/dashboard1.png) | ![Board](docs/screenshots/dashboard2.png) | ![Board](docs/screenshots/dashboard3.png) |
-| ![Ticket timeline](docs/screenshots/userpov4.png) 
+| ![Login](docs/screenshots/loginlight.png) | ![Login](docs/screenshots/logindark.png) | ![Board](docs/screenshots/dashboard1.png) | ![Board](docs/screenshots/dashboard2.png)
+| ![Board](docs/screenshots/dashboard3.png) | ![Ticket timeline](docs/screenshots/userpov4.png) 
 
 Mobile view:
 
