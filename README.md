@@ -2,7 +2,7 @@
 
 A small help desk web app. People send support tickets, agents and admins work through them, and every step is recorded in an activity timeline. It includes a REST API, an automated test suite, and an accessible, responsive interface with a dark theme.
 
-**Live demo:** [[LIVE DEMO URL, added after the Render deployment]]
+**Live demo:** [[https://helpticketer.onrender.com/login]]
 (The free demo host resets its data when it restarts, so the app re-loads fake demo data on startup.)
 
 ![Dashboard](docs/screenshots/dashboard1.png)
