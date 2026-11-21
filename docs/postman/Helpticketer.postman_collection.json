@@ -1,0 +1,202 @@
+{
+  "info": {
+    "name": "Helpticketer API",
+    "description": "Requests for the Helpticketer REST API. Change the `email` collection variable to switch roles (user@demo.com, agent@demo.com, admin@demo.com). Password for all demo accounts: Demo1234!",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      { "key": "username", "value": "{{email}}", "type": "string" },
+      { "key": "password", "value": "{{password}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:5000" },
+    { "key": "email", "value": "agent@demo.com" },
+    { "key": "password", "value": "Demo1234!" },
+    { "key": "ticketId", "value": "1" },
+    { "key": "myId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 No login returns 401",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 401', function () { pm.response.to.have.status(401); });",
+        "pm.test('Error has the standard shape', function () {",
+        "  const body = pm.response.json();",
+        "  pm.expect(body).to.have.property('error');",
+        "  pm.expect(body).to.have.property('fields');",
+        "});"
+      ] } }],
+      "request": { "auth": { "type": "noauth" }, "method": "GET", "header": [], "url": "{{baseUrl}}/api/tickets" }
+    },
+    {
+      "name": "02 Who am I",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+        "const user = pm.response.json().user;",
+        "pm.test('Returns my account', function () { pm.expect(user.email).to.eql(pm.collectionVariables.get('email')); });",
+        "pm.collectionVariables.set('myId', user.id);"
+      ] } }],
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/me" }
+    },
+    {
+      "name": "03 List tickets",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+        "pm.test('Has paging fields', function () {",
+        "  const body = pm.response.json();",
+        "  pm.expect(body).to.have.property('tickets');",
+        "  pm.expect(body).to.have.property('total');",
+        "  pm.expect(body).to.have.property('pages');",
+        "});"
+      ] } }],
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/tickets" }
+    },
+    {
+      "name": "04 Filter: unassigned (staff queue)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+        "pm.test('Every ticket is unassigned', function () {",
+        "  pm.response.json().tickets.forEach(function (t) { pm.expect(t.assignee).to.eql(null); });",
+        "});"
+      ] } }],
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/tickets?unassigned=true" }
+    },
+    {
+      "name": "05 Search",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', function () { pm.response.to.have.status(200); });"
+      ] } }],
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/tickets?q=vpn&status=Open" }
+    },
+    {
+      "name": "06 Bad filter returns 422",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 422', function () { pm.response.to.have.status(422); });",
+        "pm.test('Names the bad field', function () { pm.expect(pm.response.json().fields).to.have.property('status'); });"
+      ] } }],
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/tickets?status=Banana" }
+    },
+    {
+      "name": "07 Create ticket",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+        "pm.test('Has a Location header', function () { pm.response.to.have.header('Location'); });",
+        "const ticket = pm.response.json().ticket;",
+        "pm.test('Starts as Open', function () { pm.expect(ticket.status).to.eql('Open'); });",
+        "pm.collectionVariables.set('ticketId', ticket.id);"
+      ] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"title\": \"Postman test ticket\",\n  \"description\": \"Created from the Postman collection.\",\n  \"category\": \"Software\",\n  \"priority\": \"High\"\n}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tickets"
+      }
+    },
+    {
+      "name": "08 Create with empty body returns 422",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 422', function () { pm.response.to.have.status(422); });",
+        "pm.test('Lists every missing field', function () {",
+        "  const fields = pm.response.json().fields;",
+        "  pm.expect(fields).to.have.property('title');",
+        "  pm.expect(fields).to.have.property('description');",
+        "  pm.expect(fields).to.have.property('category');",
+        "});"
+      ] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tickets"
+      }
+    },
+    {
+      "name": "09 Get one ticket",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+        "pm.test('Includes comments', function () { pm.expect(pm.response.json().ticket).to.have.property('comments'); });"
+      ] } }],
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/tickets/{{ticketId}}" }
+    },
+    {
+      "name": "10 Add a comment",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 201', function () { pm.response.to.have.status(201); });"
+      ] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"body\": \"Posted from Postman.\"\n}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tickets/{{ticketId}}/comments"
+      }
+    },
+    {
+      "name": "11 Assign to me (staff only)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+        "pm.test('Assigned to me', function () { pm.expect(pm.response.json().ticket.assignee.email === undefined).to.eql(true); });"
+      ] } }],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"assignee_id\": {{myId}}\n}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tickets/{{ticketId}}/assignee"
+      }
+    },
+    {
+      "name": "12 Change status to In Progress (staff only)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+        "pm.test('Now In Progress', function () { pm.expect(pm.response.json().ticket.status).to.eql('In Progress'); });"
+      ] } }],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"status\": \"In Progress\"\n}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tickets/{{ticketId}}/status"
+      }
+    },
+    {
+      "name": "13 Resolve without a note returns 409",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 409', function () { pm.response.to.have.status(409); });",
+        "pm.test('Explains the rule', function () { pm.expect(pm.response.json().error).to.include('resolution note'); });"
+      ] } }],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"status\": \"Resolved\"\n}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tickets/{{ticketId}}/status"
+      }
+    },
+    {
+      "name": "14 Resolve with a note",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+        "pm.test('Now Resolved', function () { pm.expect(pm.response.json().ticket.status).to.eql('Resolved'); });"
+      ] } }],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"status\": \"Resolved\",\n  \"resolution_note\": \"Fixed from the Postman collection.\"\n}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tickets/{{ticketId}}/status"
+      }
+    },
+    {
+      "name": "15 Dashboard statistics",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+        "pm.test('Has the counts', function () {",
+        "  const stats = pm.response.json().stats;",
+        "  pm.expect(stats).to.have.property('total');",
+        "  pm.expect(stats).to.have.property('by_status');",
+        "  pm.expect(stats).to.have.property('assigned_to_me');",
+        "});"
+      ] } }],
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/stats" }
+    }
+  ]
+}
