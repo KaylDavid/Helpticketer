@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, redirect, render_template, url_for
 from flask_login import login_required
 
 from ..models import CATEGORIES, PRIORITIES, STATUSES
@@ -16,3 +16,9 @@ def home():
         priorities=PRIORITIES,
         categories=CATEGORIES,
     )
+
+
+@bp.route("/favicon.ico")
+def favicon():
+    """Older browsers ask for /favicon.ico by itself. Send them to the SVG icon."""
+    return redirect(url_for("static", filename="favicon.svg"))
